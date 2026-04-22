@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import {
   BookOpen,
   Calendar,
@@ -11,14 +12,34 @@ import {
   Bell,
   Clock,
   ArrowRight,
+  ShieldCheck,
+  AlertTriangle,
+  X,
 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
- const userName = localStorage.getItem("name") || "Student";
-const userEmail = localStorage.getItem("email") || "No email";
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // ✅ Decode JWT
+  const token = localStorage.getItem("token");
+  let userName = "Student";
+  let userEmail = "No email";
+
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      userName = decoded.name || "Student";
+      userEmail = decoded.sub || "No email";
+    } catch (err) {
+      console.error("Invalid token");
+    }
+  }
+
   const handleLogout = () => {
     localStorage.clear();
+    toast.success("Signed out successfully");
     navigate("/login");
   };
 
@@ -26,231 +47,229 @@ const userEmail = localStorage.getItem("email") || "No email";
     {
       id: 1,
       time: "10:30 AM",
-      title: "New Assignment Uploaded",
-      desc: "Spring Security JWT implementation task is now live.",
-      type: "task",
+      title: "New Assignment",
+      desc: "Spring Security JWT task is live.",
     },
     {
       id: 2,
       time: "02:00 PM",
-      title: "Live Session Link",
-      desc: "Doubt clearing session starting in 30 minutes on Zoom.",
-      type: "live",
+      title: "Live Session",
+      desc: "Doubt clearing starts at 4 PM.",
     },
   ];
 
   const pendingTasks = [
-    {
-      id: 1,
-      task: "Complete Axios Integration",
-      deadline: "Today",
-      status: "Pending",
-    },
+    { id: 1, task: "Axios Integration", deadline: "Today", status: "Pending" },
     {
       id: 2,
-      task: "Database Schema Design",
+      task: "Schema Design",
       deadline: "Tomorrow",
       status: "In Progress",
-    },
-    {
-      id: 3,
-      task: "React Hooks Quiz",
-      deadline: "19 April",
-      status: "Not Started",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] flex flex-col font-sans text-udemyDark">
-      {/* --- TOP NAVIGATION BAR --- */}
-      <nav className="bg-udemyDark text-white px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <div className="flex items-center gap-8">
-          <span className="text-xl font-black uppercase tracking-tighter">
-            SSY <span className="text-udemyPurple">Academics</span>
-          </span>
-          <div className="hidden md:flex gap-6 text-xs font-bold uppercase tracking-widest text-gray-400">
-            <button className="hover:text-white transition-colors">
-              My Courses
-            </button>
-            <button className="hover:text-white transition-colors">
-              Resources
-            </button>
-            <button className="hover:text-white transition-colors">
-              Placements
-            </button>
+    <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-900 antialiased">
+      <Toaster position="top-center" />
+
+      {/* --- MODAL: LOGOUT CONFIRMATION --- */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white border border-slate-200 max-w-sm w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 text-amber-600 mb-4">
+              <AlertTriangle size={24} />
+              <h3 className="text-lg font-bold">Sign Out?</h3>
+            </div>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              Are you sure you want to log out? You will need to re-authenticate
+              to access your curriculum.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2 text-sm font-bold border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 text-sm font-bold bg-slate-900 text-white hover:bg-red-600 transition-colors"
+              >
+                LOGOUT
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="flex items-center gap-5">
-          <button className="relative p-2 hover:bg-gray-800 rounded-full transition-colors">
+      {/* --- NAVBAR --- */}
+      <nav className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-black tracking-tighter">
+            SSY <span className="text-indigo-400">ACADEMICS</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="relative cursor-pointer hover:text-indigo-400 transition-colors">
             <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-udemyPurple rounded-full border-2 border-udemyDark"></span>
-          </button>
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full border-2 border-slate-900"></span>
+          </div>
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 text-sm font-bold transition-all border border-white/10"
+            onClick={() => setShowLogoutModal(true)}
+            className="group flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-indigo-400 transition-colors"
           >
-            <LogOut size={16} /> Logout
+            <LogOut
+              size={16}
+              className="group-hover:-translate-x-1 transition-transform"
+            />
+            Logout
           </button>
         </div>
       </nav>
 
-      <div className="max-w-[1400px] mx-auto w-full p-6 grid lg:grid-cols-12 gap-6">
-        {/* --- LEFT COLUMN: WELCOME & CURRENT COURSE (8 COLS) --- */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Welcome Card */}
-          <header className="bg-white border border-gray-100 p-8 shadow-sm relative overflow-hidden">
-            <div className="relative z-10">
-              <h1 className="text-3xl font-black mb-2">
-                Welcome back!
-              </h1>
-
-              <p className="text-udemyGray max-w-md">{userEmail}</p>
-              <p className="text-udemyGray max-w-md">
-                You have completed{" "}
-                <span className="font-bold text-udemyDark">65%</span> of your
-                current track. You're on schedule to graduate in June.
-              </p>
+      {/* --- CONTENT --- */}
+      <div className="max-w-7xl mx-auto p-8 grid lg:grid-cols-12 gap-8">
+        {/* LEFT SECTION */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* WELCOME BANNER */}
+          <div className="bg-white border border-slate-200 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+            <div className="flex items-center gap-5">
+              <div className="h-16 w-16 bg-slate-900 flex items-center justify-center text-indigo-400 text-2xl font-black">
+                {userName.charAt(0)}
+              </div>
+              <div>
+                <h1 className="text-3xl font-black tracking-tight">
+                  Welcome, {userName}
+                </h1>
+                <div className="flex items-center gap-2 text-slate-400 text-sm font-medium mt-1">
+                  <ShieldCheck size={14} className="text-indigo-500" />
+                  Verified Student Dashboard
+                </div>
+              </div>
             </div>
-            <div className="absolute -right-10 -bottom-10 opacity-5">
-              <BookOpen size={200} />
+            <div className="text-left md:text-right">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Progress
+              </span>
+              <div className="text-2xl font-black text-indigo-600">65%</div>
             </div>
-          </header>
+          </div>
 
-          {/* Current Course Card */}
-          <section className="bg-white border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-50 flex justify-between items-center">
-              <h2 className="font-bold flex items-center gap-2 uppercase text-xs tracking-widest">
-                <PlayCircle size={18} className="text-udemyPurple" /> Currently
-                Enrolled
-              </h2>
-              <span className="text-[10px] font-black bg-purple-50 text-udemyPurple px-2 py-1">
-                BATCH: JAVA-FS-APR26
+          {/* CURRENT COURSE GRID */}
+          <div className="bg-white border border-slate-200 overflow-hidden group">
+            <div className="bg-slate-50 border-b border-slate-100 px-6 py-3 flex items-center gap-2">
+              <PlayCircle size={16} className="text-indigo-600" />
+              <span className="text-xs font-black uppercase tracking-widest text-slate-500">
+                Active Curriculum
               </span>
             </div>
 
             <div className="p-8 flex flex-col md:flex-row gap-8 items-center">
-              <div className="w-full md:w-48 h-32 bg-gray-900 flex items-center justify-center relative group cursor-pointer">
-                <PlayCircle
-                  className="text-white opacity-50 group-hover:scale-110 transition-transform"
-                  size={40}
+              <div className="relative w-full md:w-64 aspect-video bg-slate-900 flex items-center justify-center overflow-hidden">
+                <PlayCircle className="text-white/20 absolute" size={80} />
+                <img
+                  src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400"
+                  className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                  alt="Course Cover"
                 />
               </div>
-              <div className="flex-grow space-y-4">
+
+              <div className="flex-1 space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold">
-                    Full Stack Java Development with React
+                  <h3 className="font-black text-xl mb-2">
+                    Full Stack Java Development
                   </h3>
-                  <p className="text-sm text-udemyGray">
-                    Module 4: Advanced Spring Security & JWT
+                  <p className="text-slate-500 text-sm leading-relaxed">
+                    Next Lesson: Spring Security Implementation
                   </p>
                 </div>
-                {/* Progress Bar */}
+
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span>Course Progress</span>
-                    <span>65%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 h-2">
-                    <div className="bg-udemyPurple h-full w-[65%]"></div>
+                  <div className="w-full bg-slate-100 h-1.5 overflow-hidden">
+                    <div className="bg-slate-900 h-full w-[65%] transition-all duration-1000"></div>
                   </div>
                 </div>
-                <button className="bg-udemyDark text-white px-6 py-3 text-sm font-bold hover:bg-gray-800 transition-all flex items-center gap-2">
-                  Continue Learning <ArrowRight size={16} />
+
+                <button className="bg-slate-900 text-white px-6 py-3 text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-100">
+                  RESUME SESSION <ArrowRight size={14} />
                 </button>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* Useful Buttons Grid */}
+          {/* ACTION TILES */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <DashboardButton icon={<FileText />} label="Assignments" />
             <DashboardButton icon={<Calendar />} label="Schedule" />
-            <DashboardButton icon={<MessageSquare />} label="Ask Mentor" />
-            <DashboardButton icon={<CheckSquare />} label="Certificates" />
+            <DashboardButton icon={<MessageSquare />} label="Mentor" />
+            <DashboardButton icon={<CheckSquare />} label="Results" />
           </div>
         </div>
 
-        {/* --- RIGHT COLUMN: UPDATES & TASKS (4 COLS) --- */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Daily Updates Section */}
-          <section className="bg-white border border-gray-100 shadow-sm">
-            <div className="p-5 border-b border-gray-50 flex items-center gap-2">
-              <Clock size={18} className="text-udemyPurple" />
-              <h2 className="font-bold uppercase text-xs tracking-widest">
-                Daily Updates
-              </h2>
-            </div>
-            <div className="p-5 space-y-6">
-              {dailyUpdates.map((update) => (
+        {/* RIGHT SECTION: UPDATES & TASKS */}
+        <div className="lg:col-span-4 space-y-8">
+          <div className="bg-white border border-slate-200 p-6">
+            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+              <Clock size={14} className="text-indigo-600" /> Timeline
+            </h2>
+
+            <div className="space-y-6">
+              {dailyUpdates.map((u) => (
                 <div
-                  key={update.id}
-                  className="border-l-2 border-udemyPurple pl-4 space-y-1"
+                  key={u.id}
+                  className="relative pl-6 before:absolute before:left-0 before:top-1.5 before:w-2 before:h-2 before:bg-indigo-500 before:rounded-full after:absolute after:left-[3px] after:top-5 after:bottom-[-20px] after:w-[1px] after:bg-slate-100 last:after:hidden"
                 >
-                  <span className="text-[10px] font-black text-gray-400">
-                    {update.time}
+                  <span className="text-[10px] font-bold text-slate-400 block mb-1">
+                    {u.time}
                   </span>
-                  <h4 className="text-sm font-bold">{update.title}</h4>
-                  <p className="text-xs text-udemyGray leading-relaxed">
-                    {update.desc}
+                  <h4 className="font-bold text-sm text-slate-800">
+                    {u.title}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">{u.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-slate-900 p-6 text-white shadow-xl shadow-slate-200">
+            <h2 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
+              <CheckSquare size={14} /> Critical Tasks
+            </h2>
+
+            <div className="space-y-3">
+              {pendingTasks.map((t) => (
+                <div
+                  key={t.id}
+                  className="bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-colors cursor-pointer group"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-sm font-bold group-hover:text-indigo-400 transition-colors">
+                      {t.task}
+                    </p>
+                    <span className="text-[10px] font-black uppercase text-indigo-400">
+                      {t.status}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-tighter">
+                    Deadline: {t.deadline}
                   </p>
                 </div>
               ))}
             </div>
-          </section>
-
-          {/* Tasks Section */}
-          <section className="bg-white border border-gray-100 shadow-sm">
-            <div className="p-5 border-b border-gray-50 flex items-center gap-2">
-              <CheckSquare size={18} className="text-udemyPurple" />
-              <h2 className="font-bold uppercase text-xs tracking-widest">
-                To-Do List
-              </h2>
-            </div>
-            <div className="p-5 space-y-4">
-              {pendingTasks.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
-                >
-                  <div>
-                    <h4 className="text-xs font-bold group-hover:text-udemyPurple transition-colors">
-                      {item.task}
-                    </h4>
-                    <p className="text-[10px] text-gray-400">
-                      Due: {item.deadline}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-[9px] font-black px-2 py-1 rounded-full ${
-                      item.status === "Pending"
-                        ? "bg-orange-50 text-orange-600"
-                        : "bg-blue-50 text-blue-600"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-              <button className="w-full py-2 border border-dashed border-gray-300 text-xs font-bold text-gray-400 hover:border-udemyPurple hover:text-udemyPurple transition-all mt-2">
-                + View All Tasks
-              </button>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-/* --- SHARED HELPER COMPONENTS --- */
-
 const DashboardButton = ({ icon, label }) => (
-  <button className="bg-white border border-gray-100 p-4 flex flex-col items-center gap-3 hover:border-udemyPurple hover:shadow-md transition-all group">
-    <div className="text-gray-400 group-hover:text-udemyPurple transition-colors">
+  <button className="bg-white border border-slate-100 p-6 flex flex-col items-center gap-3 hover:border-slate-900 hover:shadow-xl transition-all duration-300 group">
+    <div className="text-slate-400 group-hover:text-indigo-600 transition-colors">
       {React.cloneElement(icon, { size: 24 })}
     </div>
-    <span className="text-[11px] font-black uppercase tracking-wider text-gray-500 group-hover:text-udemyDark">
+    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors">
       {label}
     </span>
   </button>

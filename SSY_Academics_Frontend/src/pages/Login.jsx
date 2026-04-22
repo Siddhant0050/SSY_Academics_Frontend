@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn, ArrowRight } from "lucide-react";
-import { loginUser } from "../services/auth"; // Adjust path based on your folder structure
+import { loginUser } from "../services/auth";
 import { jwtDecode } from "jwt-decode";
+import toast, { Toaster } from "react-hot-toast";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -16,7 +17,6 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ CORRECT PLACE FOR API + ROLE LOGIC
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -24,57 +24,67 @@ const Login = () => {
 
     try {
       const response = await loginUser(formData);
-
-      console.log("Login Response:", response.data);
-
+      
       // ✅ Save token
       const token = response?.data?.token;
+      if (!token) throw new Error("Token not received from server");
+      
       localStorage.setItem("token", token);
 
-      // ✅ Get role safely
-      let role =
-        response?.data?.role ||
-        response?.data?.user?.role ||
-        response?.data?.userRole;
-
-      if (!role) throw new Error("Role not found");
-
-      // ✅ Remove ROLE_ prefix
-      role = role.replace("ROLE_", "");
-
+      // ✅ Get and Clean Role
+      let role = response?.data?.role || response?.data?.user?.role || response?.data?.userRole;
+      if (!role) throw new Error("User role not found");
+      
+      role = role.replace("ROLE_", "").toUpperCase();
       localStorage.setItem("role", role);
 
-      const decoded = jwtDecode(response.data.token);
-
-      localStorage.setItem("name", decoded.name);
+      // ✅ Decode JWT for user details
+      const decoded = jwtDecode(token);
+      localStorage.setItem("name", decoded.name || "User");
       localStorage.setItem("email", decoded.sub);
 
-      // ✅ Redirect
-      if (role === "STUDENT") {
-        navigate("/student-dashboard");
-      } else if (role === "ADMIN") {
-        navigate("/admin-dashboard");
-      } else {
-        navigate("/");
-      }
-    } catch (err) {
-      console.error(err);
+      // ✅ Notification
+      toast.success(`Welcome back, ${decoded.name || 'Student'}!`, {
+        style: {
+          borderRadius: '0px',
+          background: '#1c1d1f',
+          color: '#fff',
+        },
+      });
 
-      setError(err.response?.data?.message || err.message || "Login failed");
+      // ✅ Controlled Redirect
+      setTimeout(() => {
+        if (role === "STUDENT") {
+          navigate("/student-dashboard");
+        } else if (role === "ADMIN") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 1000);
+
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Login failed";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-[calc(100vh-72px)] flex items-center justify-center bg-gray-50 p-6">
+      <Toaster position="top-center" />
+      
       <div className="max-w-[1000px] w-full bg-white shadow-udemy flex overflow-hidden border border-udemyBorder">
-        {/* Left Side: Brand/Image (Hidden on Mobile) */}
+        
+        {/* Left Side: Brand/Image */}
         <div className="hidden lg:flex w-1/2 bg-udemyDark p-12 flex-col justify-between text-white relative overflow-hidden">
           <div className="z-10">
             <h2 className="text-3xl font-bold tracking-tighter mb-4">
               SSY <span className="text-udemyPurple">ACADEMICS</span>
             </h2>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-400 text-lg leading-relaxed">
               Login to continue your learning journey and access your
               personalized dashboard.
             </p>
@@ -111,14 +121,14 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+            <div className="mb-6 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm animate-in fade-in slide-in-from-top-1">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase text-udemyDark">
+              <label className="text-xs font-bold uppercase text-udemyDark tracking-tight">
                 Email
               </label>
               <div className="relative">
@@ -136,7 +146,7 @@ const Login = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold uppercase text-udemyDark">
+              <label className="text-xs font-bold uppercase text-udemyDark tracking-tight">
                 Password
               </label>
               <div className="relative">
@@ -155,11 +165,7 @@ const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3 text-gray-400 hover:text-udemyDark"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -168,13 +174,12 @@ const Login = () => {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 border-udemyDark rounded-none"
+                  className="w-4 h-4 border-udemyDark rounded-none accent-udemyPurple"
                 />
                 <span className="text-udemyGray">Remember me</span>
               </label>
               <Link
                 to="/forgot-password"
-                size="sm"
                 className="text-udemyPurple font-bold hover:underline"
               >
                 Forgot password?
@@ -199,12 +204,12 @@ const Login = () => {
           {/* Divider */}
           <div className="relative my-8 text-center">
             <hr className="border-gray-200" />
-            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-xs text-gray-400 uppercase font-bold">
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-xs text-gray-400 uppercase font-bold tracking-widest">
               Or
             </span>
           </div>
 
-          <p className="text-center text-[12px] text-gray-500">
+          <p className="text-center text-[11px] text-gray-500 leading-relaxed">
             By logging in, you agree to our{" "}
             <span className="underline cursor-pointer">Terms of Use</span> and{" "}
             <span className="underline cursor-pointer">Privacy Policy</span>.
