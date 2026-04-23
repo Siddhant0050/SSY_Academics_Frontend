@@ -62,7 +62,7 @@ const BatchManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.batchName || !form.courseId || !form.trainerId)
+    if (!form.batchName || !form.courseId || !form.trainerId || !form.capacity)
       return toast.error("Required fields missing");
 
     setLoading(true);
@@ -92,7 +92,13 @@ const BatchManager = () => {
 
   const handleEditRequest = (batch) => {
     setEditId(batch.id);
-    setForm({ ...batch });
+    setForm({
+      ...batch,
+      // Ensure select values and numbers are strings for controlled inputs
+      courseId: batch.courseId?.toString() || "",
+      trainerId: batch.trainerId?.toString() || "",
+      capacity: batch.capacity?.toString() || "",
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -277,8 +283,22 @@ const BatchManager = () => {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center pt-4 gap-6 border-t border-slate-50">
+            {/* CAPACITY INPUT FIELD (FIXED) */}
             <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-              <Users size={18} className="text-slate-400" />
+              <div className="flex items-center gap-2">
+                <Users size={18} className="text-slate-400" />
+                <label className="text-[11px] font-bold text-slate-400 uppercase">
+                  Capacity
+                </label>
+              </div>
+              <input
+                type="number"
+                value={form.capacity}
+                onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+                className="w-20 bg-transparent font-bold text-slate-700 outline-none"
+                placeholder="0"
+                min="0"
+              />
             </div>
 
             <button
@@ -329,9 +349,17 @@ const BatchManager = () => {
               </div>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-800 mb-6 truncate">
+            <h3 className="text-lg font-bold text-slate-800 mb-2 truncate">
               {b.batchName}
             </h3>
+
+            {/* CAPACITY DISPLAY ON CARD */}
+            <div className="flex items-center gap-1.5 mb-6">
+              <Users size={12} className="text-slate-400" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                Limit: {b.capacity || "0"} Students
+              </span>
+            </div>
 
             <div className="space-y-3 pt-4 border-t border-slate-50">
               <div className="flex items-center justify-between">
@@ -344,7 +372,7 @@ const BatchManager = () => {
                 </div>
               </div>
               <p className="text-sm font-bold text-slate-700 truncate">
-                {courses.find((c) => c.id === b.courseId)?.title ||
+                {courses.find((c) => c.id === Number(b.courseId))?.title ||
                   "General Program"}
               </p>
             </div>
